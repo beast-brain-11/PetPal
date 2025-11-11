@@ -39,10 +39,15 @@ export default function Home() {
 
   const handleImageUpload = async (file: File) => {
     setSelectedFile(file);
+    // Don't auto-submit, just store the file
+  };
+
+  const handleAnalyzeImage = async () => {
+    if (!selectedFile) return;
     setLoading(true);
     try {
       const dietaryOptionsStr = selectedDietaryOptions.join(',');
-      const results = await petPalAPI.predictBreedFromImage(file, dietaryOptionsStr);
+      const results = await petPalAPI.predictBreedFromImage(selectedFile, dietaryOptionsStr);
       if (results && results.length > 0) {
         setBreedResult(results[0]);
         setRecipes(results[0].recipes);
@@ -110,7 +115,13 @@ export default function Home() {
         {/* Tabs */}
         <div className="flex gap-4 mb-8 justify-center">
           <button
-            onClick={() => setActiveTab('image')}
+            onClick={() => {
+              setActiveTab('image');
+              setSelectedFile(null);
+              setBreedResult(null);
+              setRecipes([]);
+              setShowChatbot(false);
+            }}
             className={`px-6 py-3 rounded-lg font-medium transition-all ${
               activeTab === 'image'
                 ? 'bg-indigo-600 text-white shadow-lg'
@@ -120,7 +131,13 @@ export default function Home() {
             📸 Upload Image
           </button>
           <button
-            onClick={() => setActiveTab('text')}
+            onClick={() => {
+              setActiveTab('text');
+              setSelectedFile(null);
+              setBreedResult(null);
+              setRecipes([]);
+              setShowChatbot(false);
+            }}
             className={`px-6 py-3 rounded-lg font-medium transition-all ${
               activeTab === 'text'
                 ? 'bg-indigo-600 text-white shadow-lg'
@@ -145,7 +162,18 @@ export default function Home() {
           )}
 
           {activeTab === 'image' ? (
-            <ImageUpload onImageSelect={handleImageUpload} loading={loading} />
+            <div className="space-y-4">
+              <ImageUpload onImageSelect={handleImageUpload} loading={loading} />
+              {selectedFile && !loading && !breedResult && (
+                <button
+                  onClick={handleAnalyzeImage}
+                  className="w-full bg-indigo-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Sparkles className="h-5 w-5" />
+                  Analyze Image & Generate Recipes
+                </button>
+              )}
+            </div>
           ) : (
             <BreedSearch
               onSearch={handleBreedSearch}
@@ -184,28 +212,42 @@ export default function Home() {
             </div>
 
             {/* Recipes Section */}
-            <div>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                  <Sparkles className="h-6 w-6 text-indigo-600" />
-                  Personalized Recipes
-                </h2>
+            {recipes.length > 0 ? (
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                    <Sparkles className="h-6 w-6 text-indigo-600" />
+                    Personalized Recipes ({recipes.length})
+                  </h2>
+                  <button
+                    onClick={handleGenerateMoreRecipes}
+                    disabled={loading}
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                    Generate More
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {recipes.map((recipe, index) => (
+                    <RecipeCard key={index} recipe={recipe} />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 bg-gray-50 rounded-lg">
+                <p className="text-gray-600">No recipes generated yet.</p>
                 <button
                   onClick={handleGenerateMoreRecipes}
                   disabled={loading}
-                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="mt-4 inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                  Generate More
+                  <Sparkles className="h-5 w-5" />
+                  Generate Recipes
                 </button>
               </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {recipes.map((recipe, index) => (
-                  <RecipeCard key={index} recipe={recipe} />
-                ))}
-              </div>
-            </div>
+            )}
 
             {/* Chatbot Section */}
             {showChatbot && (
