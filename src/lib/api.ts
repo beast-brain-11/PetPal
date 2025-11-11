@@ -37,22 +37,36 @@ export const petPalAPI = {
     file: File,
     dietaryOptions?: string
   ): Promise<BreedResult[]> {
-    const formData = new FormData();
-    formData.append('file', file);
-    if (dietaryOptions) {
-      formData.append('dietary_options', dietaryOptions);
-    }
-
-    const response = await axios.post(
-      `${API_BASE_URL}/predict_dog_breed_image`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      if (dietaryOptions) {
+        formData.append('dietary_options', dietaryOptions);
       }
-    );
-    return response.data;
+
+      console.log('API Call: predictBreedFromImage', { 
+        fileSize: file.size, 
+        fileType: file.type,
+        dietaryOptions 
+      });
+
+      const response = await axios.post(
+        `${API_BASE_URL}/predict_dog_breed_image`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          timeout: 60000, // 60 second timeout
+        }
+      );
+      
+      console.log('API Response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('API Error:', error.response?.data || error.message);
+      throw error;
+    }
   },
 
   /**

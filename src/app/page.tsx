@@ -19,19 +19,24 @@ export default function Home() {
   const [selectedDietaryOptions, setSelectedDietaryOptions] = useState<string[]>([]);
   const [popularBreeds, setPopularBreeds] = useState<Record<string, string>>({});
   const [showChatbot, setShowChatbot] = useState(false);
+  const [apiStatus, setApiStatus] = useState<string>('');
 
   useEffect(() => {
     // Fetch dietary options and popular breeds on mount
     const fetchInitialData = async () => {
       try {
+        setApiStatus('Connecting to API...');
         const [options, breeds] = await Promise.all([
           petPalAPI.getDietaryOptions(),
           petPalAPI.getPopularBreeds(),
         ]);
         setDietaryOptions(options);
         setPopularBreeds(breeds);
+        setApiStatus('API Connected ✓');
+        console.log('Initial data loaded:', { dietaryOptions: options, breedCount: Object.keys(breeds).length });
       } catch (error) {
         console.error('Error fetching initial data:', error);
+        setApiStatus('API Connection Failed ✗');
       }
     };
     fetchInitialData();
@@ -43,19 +48,34 @@ export default function Home() {
   };
 
   const handleAnalyzeImage = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile) {
+      alert('Please select an image first');
+      return;
+    }
     setLoading(true);
     try {
-      const dietaryOptionsStr = selectedDietaryOptions.join(',');
+      const dietaryOptionsStr = selectedDietaryOptions.length > 0 
+        ? selectedDietaryOptions.join(',') 
+        : undefined;
+      
+      console.log('Analyzing image...', { fileName: selectedFile.name, dietaryOptions: dietaryOptionsStr });
+      
       const results = await petPalAPI.predictBreedFromImage(selectedFile, dietaryOptionsStr);
+      
+      console.log('API Response:', results);
+      
       if (results && results.length > 0) {
+        console.log('Setting breed result:', results[0]);
         setBreedResult(results[0]);
-        setRecipes(results[0].recipes);
+        setRecipes(results[0].recipes || []);
         setShowChatbot(true);
+      } else {
+        alert('No breed detected. Please try with a clearer dog image.');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error predicting breed from image:', error);
-      alert('Error analyzing image. Please try again.');
+      const errorMsg = error.response?.data?.detail || error.message || 'Unknown error occurred';
+      alert(`Error analyzing image: ${errorMsg}\n\nPlease try again with a different image.`);
     } finally {
       setLoading(false);
     }
@@ -64,33 +84,54 @@ export default function Home() {
   const handleBreedSearch = async (breed: string) => {
     setLoading(true);
     try {
-      const dietaryOptionsStr = selectedDietaryOptions.join(',');
+      const dietaryOptionsStr = selectedDietaryOptions.length > 0 
+        ? selectedDietaryOptions.join(',') 
+        : undefined;
+      
+      console.log('Searching breed:', { breed, dietaryOptions: dietaryOptionsStr });
+      
       const result = await petPalAPI.predictBreedFromText(breed, dietaryOptionsStr);
+      
+      console.log('API Response:', result);
+      
       setBreedResult(result);
-      setRecipes(result.recipes);
+      setRecipes(result.recipes || []);
       setShowChatbot(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error searching breed:', error);
-      alert('Error searching breed. Please try again.');
+      const errorMsg = error.response?.data?.detail || error.message || 'Unknown error occurred';
+      alert(`Error searching breed: ${errorMsg}\n\nPlease try again.`);
     } finally {
       setLoading(false);
     }
   };
 
   const handleGenerateMoreRecipes = async () => {
-    if (!breedResult) return;
+    if (!breedResult) {
+      alert('Please detect a breed first');
+      return;
+    }
     setLoading(true);
     try {
-      const dietaryOptionsStr = selectedDietaryOptions.join(',');
+      const dietaryOptionsStr = selectedDietaryOptions.length > 0 
+        ? selectedDietaryOptions.join(',') 
+        : undefined;
+      
+      console.log('Generating more recipes for:', breedResult.breed);
+      
       const newRecipes = await petPalAPI.generateMoreRecipes(
         breedResult.breed,
         dietaryOptionsStr,
         3
       );
-      setRecipes(newRecipes);
-    } catch (error) {
+      
+      console.log('New recipes:', newRecipes);
+      
+      setRecipes(newRecipes || []);
+    } catch (error: any) {
       console.error('Error generating more recipes:', error);
-      alert('Error generating recipes. Please try again.');
+      const errorMsg = error.response?.data?.detail || error.message || 'Unknown error occurred';
+      alert(`Error generating recipes: ${errorMsg}\n\nPlease try again.`);
     } finally {
       setLoading(false);
     }
@@ -108,6 +149,11 @@ export default function Home() {
           <p className="text-center text-indigo-100 text-lg">
             AI-Powered Dog Breed Analyzer & Nutrition Recipe Generator
           </p>
+          {apiStatus && (
+            <p className="text-center text-indigo-200 text-xs mt-2">
+              {apiStatus}
+            </p>
+          )}
         </div>
       </div>
 
@@ -184,9 +230,10 @@ export default function Home() {
 
           {loading && (
             <div className="mt-6 text-center">
-              <div className="inline-flex items-center gap-2 text-indigo-600">
-                <RefreshCw className="h-5 w-5 animate-spin" />
-                <span>Analyzing...</span>
+              <div className="inline-flex flex-col items-center gap-3 text-indigo-600 bg-indigo-50 px-8 py-6 rounded-lg">
+                <RefreshCw className="h-8 w-8 animate-spin" />
+                <span className="text-lg font-medium">Analyzing your image...</span>
+                <span className="text-sm text-gray-600">This may take 10-30 seconds</span>
               </div>
             </div>
           )}
