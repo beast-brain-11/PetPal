@@ -5,15 +5,17 @@ import ImageUpload from '@/components/ImageUpload';
 import BreedSearch from '@/components/BreedSearch';
 import RecipeCard from '@/components/RecipeCard';
 import Chatbot from '@/components/Chatbot';
+import GeneralChat from '@/components/GeneralChat';
 import DietaryOptions from '@/components/DietaryOptions';
 import AgeGroupSelector from '@/components/AgeGroupSelector';
 import { petPalAPI, BreedResult, RecipeCard as RecipeCardType } from '@/lib/api';
 import { Dog, RefreshCw, Sparkles } from 'lucide-react';
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'image' | 'text'>('image');
+  const [activeTab, setActiveTab] = useState<'image' | 'text' | 'chat'>('image');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
   const [breedResult, setBreedResult] = useState<BreedResult | null>(null);
   const [recipes, setRecipes] = useState<RecipeCardType[]>([]);
   const [dietaryOptions, setDietaryOptions] = useState<string[]>([]);
@@ -63,6 +65,7 @@ export default function Home() {
       return;
     }
     setLoading(true);
+    setLoadingMessage('Analyzing your image...');
     try {
       const dietaryOptionsStr = selectedDietaryOptions.length > 0 
         ? selectedDietaryOptions.join(',') 
@@ -96,11 +99,13 @@ export default function Home() {
       alert(`Error analyzing image: ${errorMsg}\n\nPlease try again with a different image.`);
     } finally {
       setLoading(false);
+      setLoadingMessage('');
     }
   };
 
   const handleBreedSearch = async (breed: string) => {
     setLoading(true);
+    setLoadingMessage('Searching for breed information...');
     try {
       const dietaryOptionsStr = selectedDietaryOptions.length > 0 
         ? selectedDietaryOptions.join(',') 
@@ -129,6 +134,7 @@ export default function Home() {
       alert(`Error searching breed: ${errorMsg}\n\nPlease try again.`);
     } finally {
       setLoading(false);
+      setLoadingMessage('');
     }
   };
 
@@ -219,7 +225,7 @@ export default function Home() {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Tabs */}
-        <div className="flex gap-4 mb-8 justify-center">
+        <div className="flex gap-4 mb-8 justify-center flex-wrap">
           <button
             onClick={() => {
               setActiveTab('image');
@@ -260,14 +266,34 @@ export default function Home() {
           >
             🔍 Search by Breed
           </button>
+          <button
+            onClick={() => {
+              setActiveTab('chat');
+              setSelectedFile(null);
+              setBreedResult(null);
+              setRecipes([]);
+              setShowChatbot(false);
+            }}
+            className={`px-6 py-3 rounded-lg font-medium transition-all ${
+              activeTab === 'chat'
+                ? darkMode
+                  ? 'bg-gray-700 text-white shadow-lg'
+                  : 'bg-indigo-600 text-white shadow-lg'
+                : darkMode
+                ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                : 'bg-white text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            💬 General Chat
+          </button>
         </div>
 
         {/* Input Section */}
         <div className={`rounded-xl shadow-lg p-6 mb-8 transition-colors ${
           darkMode ? 'bg-gray-800' : 'bg-white'
         }`}>
-          {/* Age Group Selector */}
-          {ageGroups.length > 0 && (
+          {/* Age Group Selector - Only show for image and text tabs */}
+          {activeTab !== 'chat' && ageGroups.length > 0 && (
             <div className="mb-6">
               <AgeGroupSelector
                 ageGroups={ageGroups}
@@ -278,8 +304,8 @@ export default function Home() {
             </div>
           )}
 
-          {/* Dietary Options */}
-          {dietaryOptions.length > 0 && (
+          {/* Dietary Options - Only show for image and text tabs */}
+          {activeTab !== 'chat' && dietaryOptions.length > 0 && (
             <div className="mb-6">
               <DietaryOptions
                 options={dietaryOptions}
@@ -311,16 +337,18 @@ export default function Home() {
                 </button>
               )}
             </div>
-          ) : (
+          ) : activeTab === 'text' ? (
             <BreedSearch
               onSearch={handleBreedSearch}
               loading={loading}
               popularBreeds={popularBreeds}
               darkMode={darkMode}
             />
+          ) : (
+            <GeneralChat darkMode={darkMode} />
           )}
 
-          {loading && (
+          {loading && activeTab !== 'chat' && (
             <div className="mt-6 text-center">
               <div className={`inline-flex flex-col items-center gap-3 px-8 py-6 rounded-lg ${
                 darkMode
@@ -328,7 +356,7 @@ export default function Home() {
                   : 'bg-indigo-50 text-indigo-600'
               }`}>
                 <RefreshCw className="h-8 w-8 animate-spin" />
-                <span className="text-lg font-medium">Analyzing your image...</span>
+                <span className="text-lg font-medium">{loadingMessage || 'Processing...'}</span>
                 <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                   This may take 10-30 seconds
                 </span>
