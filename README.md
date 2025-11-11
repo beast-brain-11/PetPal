@@ -8,6 +8,8 @@ A clean, minimal Next.js frontend for the PetPal API - an AI-powered dog breed a
 
 🔍 **Text-Based Search** - Search by breed name to get instant recipe recommendations
 
+🐶 **Age-Appropriate Recipes** - Select dog age group (Puppy, Adult, Senior) for tailored nutrition recommendations
+
 🍖 **Personalized Recipes** - Generate breed-specific healthy dog food recipes with detailed nutritional information
 
 🥗 **Dietary Preferences** - Filter recipes by 8+ dietary options (grain-free, high-protein, vegan, etc.)
@@ -110,8 +112,17 @@ petpal-frontend/
 ### Chatbot & Utilities
 - `POST /chatbot` - Ask nutrition questions
 - `GET /dietary_options` - Get available dietary filters
+- `GET /age_groups` - Get available age groups (puppyhood, adult, senior)
 - `GET /popular_breeds` - Get popular breed list
 - `GET /health` - API health check
+
+## Age Groups
+
+The app supports age-specific nutrition recommendations:
+
+- **🐶 Puppyhood** - Recipes for growing puppies with higher protein and calcium
+- **🐕 Adult** - Balanced nutrition for adult dogs (default)
+- **🦮 Senior** - Recipes for older dogs with joint support and easier digestion
 
 ## Dietary Options
 
@@ -131,12 +142,14 @@ The app supports the following dietary preferences:
 ### Image Upload
 - Drag-and-drop support
 - Image preview
+- Age group selection for appropriate recipes
 - Instant breed detection with confidence score
 - Automatic recipe generation
 
 ### Breed Search
 - Text-based search
 - Popular breeds quick access
+- Age group selection
 - Real-time results
 - Dietary preference filtering
 

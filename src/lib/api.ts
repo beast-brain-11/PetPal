@@ -35,7 +35,8 @@ export const petPalAPI = {
    */
   async predictBreedFromImage(
     file: File,
-    dietaryOptions?: string
+    dietaryOptions?: string,
+    ageGroup: string = 'adult'
   ): Promise<BreedResult[]> {
     try {
       const formData = new FormData();
@@ -43,11 +44,13 @@ export const petPalAPI = {
       if (dietaryOptions) {
         formData.append('dietary_options', dietaryOptions);
       }
+      formData.append('age_group', ageGroup);
 
       console.log('API Call: predictBreedFromImage', { 
         fileSize: file.size, 
         fileType: file.type,
-        dietaryOptions 
+        dietaryOptions,
+        ageGroup
       });
 
       const response = await axios.post(
@@ -74,13 +77,15 @@ export const petPalAPI = {
    */
   async predictBreedFromText(
     breed: string,
-    dietaryOptions?: string
+    dietaryOptions?: string,
+    ageGroup: string = 'adult'
   ): Promise<BreedResult> {
     const formData = new URLSearchParams();
     formData.append('breed', breed);
     if (dietaryOptions) {
       formData.append('dietary_options', dietaryOptions);
     }
+    formData.append('age_group', ageGroup);
 
     const response = await axios.post(
       `${API_BASE_URL}/predict_dog_breed_text`,
@@ -100,6 +105,7 @@ export const petPalAPI = {
   async getRecipes(
     breed: string,
     dietaryOptions?: string,
+    ageGroup: string = 'adult',
     count: number = 3
   ): Promise<RecipeCard[]> {
     const formData = new URLSearchParams();
@@ -107,6 +113,7 @@ export const petPalAPI = {
     if (dietaryOptions) {
       formData.append('dietary_options', dietaryOptions);
     }
+    formData.append('age_group', ageGroup);
     formData.append('count', count.toString());
 
     const response = await axios.post(
@@ -127,6 +134,7 @@ export const petPalAPI = {
   async generateMoreRecipes(
     breed: string,
     dietaryOptions?: string,
+    ageGroup: string = 'adult',
     count: number = 3
   ): Promise<RecipeCard[]> {
     const formData = new URLSearchParams();
@@ -134,6 +142,7 @@ export const petPalAPI = {
     if (dietaryOptions) {
       formData.append('dietary_options', dietaryOptions);
     }
+    formData.append('age_group', ageGroup);
     formData.append('count', count.toString());
 
     const response = await axios.post(
@@ -172,6 +181,14 @@ export const petPalAPI = {
    */
   async getDietaryOptions(): Promise<string[]> {
     const response = await axios.get(`${API_BASE_URL}/dietary_options`);
+    return response.data;
+  },
+
+  /**
+   * Get list of available age groups for dogs
+   */
+  async getAgeGroups(): Promise<string[]> {
+    const response = await axios.get(`${API_BASE_URL}/age_groups`);
     return response.data;
   },
 

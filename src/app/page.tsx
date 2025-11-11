@@ -6,6 +6,7 @@ import BreedSearch from '@/components/BreedSearch';
 import RecipeCard from '@/components/RecipeCard';
 import Chatbot from '@/components/Chatbot';
 import DietaryOptions from '@/components/DietaryOptions';
+import AgeGroupSelector from '@/components/AgeGroupSelector';
 import { petPalAPI, BreedResult, RecipeCard as RecipeCardType } from '@/lib/api';
 import { Dog, RefreshCw, Sparkles } from 'lucide-react';
 
@@ -17,6 +18,8 @@ export default function Home() {
   const [recipes, setRecipes] = useState<RecipeCardType[]>([]);
   const [dietaryOptions, setDietaryOptions] = useState<string[]>([]);
   const [selectedDietaryOptions, setSelectedDietaryOptions] = useState<string[]>([]);
+  const [ageGroups, setAgeGroups] = useState<string[]>([]);
+  const [selectedAgeGroup, setSelectedAgeGroup] = useState<string>('adult');
   const [popularBreeds, setPopularBreeds] = useState<Record<string, string>>({});
   const [showChatbot, setShowChatbot] = useState(false);
   const [apiStatus, setApiStatus] = useState<string>('');
@@ -26,14 +29,20 @@ export default function Home() {
     const fetchInitialData = async () => {
       try {
         setApiStatus('Connecting to API...');
-        const [options, breeds] = await Promise.all([
+        const [options, breeds, ages] = await Promise.all([
           petPalAPI.getDietaryOptions(),
           petPalAPI.getPopularBreeds(),
+          petPalAPI.getAgeGroups(),
         ]);
         setDietaryOptions(options);
         setPopularBreeds(breeds);
+        setAgeGroups(ages);
         setApiStatus('API Connected ✓');
-        console.log('Initial data loaded:', { dietaryOptions: options, breedCount: Object.keys(breeds).length });
+        console.log('Initial data loaded:', { 
+          dietaryOptions: options, 
+          breedCount: Object.keys(breeds).length,
+          ageGroups: ages 
+        });
       } catch (error) {
         console.error('Error fetching initial data:', error);
         setApiStatus('API Connection Failed ✗');
@@ -58,9 +67,17 @@ export default function Home() {
         ? selectedDietaryOptions.join(',') 
         : undefined;
       
-      console.log('Analyzing image...', { fileName: selectedFile.name, dietaryOptions: dietaryOptionsStr });
+      console.log('Analyzing image...', { 
+        fileName: selectedFile.name, 
+        dietaryOptions: dietaryOptionsStr,
+        ageGroup: selectedAgeGroup
+      });
       
-      const results = await petPalAPI.predictBreedFromImage(selectedFile, dietaryOptionsStr);
+      const results = await petPalAPI.predictBreedFromImage(
+        selectedFile, 
+        dietaryOptionsStr,
+        selectedAgeGroup
+      );
       
       console.log('API Response:', results);
       
@@ -88,9 +105,17 @@ export default function Home() {
         ? selectedDietaryOptions.join(',') 
         : undefined;
       
-      console.log('Searching breed:', { breed, dietaryOptions: dietaryOptionsStr });
+      console.log('Searching breed:', { 
+        breed, 
+        dietaryOptions: dietaryOptionsStr,
+        ageGroup: selectedAgeGroup
+      });
       
-      const result = await petPalAPI.predictBreedFromText(breed, dietaryOptionsStr);
+      const result = await petPalAPI.predictBreedFromText(
+        breed, 
+        dietaryOptionsStr,
+        selectedAgeGroup
+      );
       
       console.log('API Response:', result);
       
@@ -122,6 +147,7 @@ export default function Home() {
       const newRecipes = await petPalAPI.generateMoreRecipes(
         breedResult.breed,
         dietaryOptionsStr,
+        selectedAgeGroup,
         3
       );
       
@@ -196,6 +222,17 @@ export default function Home() {
 
         {/* Input Section */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+          {/* Age Group Selector */}
+          {ageGroups.length > 0 && (
+            <div className="mb-6">
+              <AgeGroupSelector
+                ageGroups={ageGroups}
+                selected={selectedAgeGroup}
+                onChange={setSelectedAgeGroup}
+              />
+            </div>
+          )}
+
           {/* Dietary Options */}
           {dietaryOptions.length > 0 && (
             <div className="mb-6">
