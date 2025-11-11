@@ -6,9 +6,10 @@ import { Upload, X } from 'lucide-react';
 interface ImageUploadProps {
   onImageSelect: (file: File) => void;
   loading?: boolean;
+  darkMode?: boolean;
 }
 
-export default function ImageUpload({ onImageSelect, loading }: ImageUploadProps) {
+export default function ImageUpload({ onImageSelect, loading, darkMode = false }: ImageUploadProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
 
@@ -60,7 +61,11 @@ export default function ImageUpload({ onImageSelect, loading }: ImageUploadProps
         <div
           className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
             dragActive
-              ? 'border-primary bg-indigo-50'
+              ? darkMode
+                ? 'border-gray-500 bg-gray-700'
+                : 'border-primary bg-indigo-50'
+              : darkMode
+              ? 'border-gray-600 hover:border-gray-500 bg-gray-800'
               : 'border-gray-300 hover:border-gray-400'
           } ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           onDragEnter={handleDrag}
@@ -75,11 +80,11 @@ export default function ImageUpload({ onImageSelect, loading }: ImageUploadProps
             accept="image/*"
             disabled={loading}
           />
-          <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <p className="text-lg font-medium text-gray-700">
+          <Upload className={`mx-auto h-12 w-12 mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-400'}`} />
+          <p className={`text-lg font-medium ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
             Drop your dog image here
           </p>
-          <p className="text-sm text-gray-500 mt-2">
+          <p className={`text-sm mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
             or click to browse (JPG, PNG)
           </p>
         </div>
